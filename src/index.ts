@@ -2,7 +2,8 @@ import { isRegExp } from 'util';
 import { generate } from 'escodegen';
 import { parseScript } from 'esprima';
 import { visit, namedTypes as n, builders as b } from 'ast-types';
-import { Context, RunningScriptOptions, runInNewContext } from 'vm';
+import { Context, RunningScriptOptions } from 'vm';
+import { VM } from 'vm2';
 
 import _supportsAsync from './supports-async';
 import generatorToPromiseFn from './generator-to-promise';
@@ -161,11 +162,8 @@ namespace degenerator {
 	): T {
 		const output = _supportsAsync ? 'async' : 'generator';
 		const compiled = degenerator(code, names, { ...options, output });
-		const fn = runInNewContext(
-			`${compiled};${returnName}`,
-			options.sandbox,
-			options
-		);
+		const vm = new VM(options);
+		const fn = vm.run(`${compiled};${returnName}`);
 		if (typeof fn !== 'function') {
 			throw new Error(
 				`Expected a "function" to be returned for \`${returnName}\`, but got "${typeof fn}"`
